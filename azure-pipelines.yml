@@ -1,0 +1,48 @@
+# Xcode
+# Build, test, and archive an Xcode workspace on macOS.
+# Add steps that install certificates, test, sign, and distribute an app, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/xcode
+
+trigger:
+- none
+
+pool:
+  name: 'local'
+
+steps:
+
+- task: InstallAppleCertificate@2
+  inputs:
+    certSecureFile: 'development.p12'
+    certPwd: 'meibp'
+    keychain: 'temp'
+    opensslPkcsArgs: '-legacy'
+
+- task: InstallAppleProvisioningProfile@1
+  inputs:
+    provisioningProfileLocation: 'secureFiles'
+    provProfileSecureFile: 'ai_app_dev.mobileprovision'
+
+- task: CmdLine@2
+  displayName: 'Build Flutter IPA'
+  inputs:
+    script: 'flutter build ipa --release'
+
+- task: CmdLine@2
+  displayName: 'Export IPA'
+  inputs:
+    script: 'xcodebuild -exportArchive -archivePath archive/Runner.xcarchive -exportPath ipa -exportOptionsPlist ../../ios/ExportOptions.plist'
+    workingDirectory: 'build/ios/'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'build/ios/ipa'
+    Contents: '*.ipa'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    OverWrite: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'ios'
+    publishLocation: 'Container'
