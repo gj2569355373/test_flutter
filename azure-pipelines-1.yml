@@ -1,0 +1,30 @@
+# Android
+# Build your Android project with Gradle.
+# Add steps that test, sign, and distribute the APK, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/android
+
+trigger:
+- none
+
+pool:
+  name: local
+
+steps:
+
+- task: CmdLine@2
+  displayName: 'Build Flutter APK'
+  inputs:
+    script: 'flutter build apk --release --no-shrink'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'build/app/outputs/apk/release'
+    Contents: 'app-release.apk'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    OverWrite: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
